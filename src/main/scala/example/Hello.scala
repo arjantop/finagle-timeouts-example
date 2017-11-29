@@ -41,7 +41,9 @@ object Hello {
       }
     }
 
-    val backendClient = Http.client.withRequestTimeout(2.seconds).newService("localhost:8989")
+    val backendClient = Http.client
+      .withSessionQualifier.noFailureAccrual
+      .withRequestTimeout(2.seconds).newService("localhost:8989")
 
     val mainService = new Service[Request, Response] {
       private val logger = Logger("MainService")
@@ -52,7 +54,7 @@ object Hello {
         val r = backendClient(Request(Method.Get, "/")).raiseWithin(1.seconds).onSuccess { _ =>
           logger.info("[%s] Call took: %dms", name, elapsed().inMillis)
         }.onFailure { e =>
-          logger.error(e, "[%s] Call failed: %dms", name, elapsed().inMillis)
+          logger.error("[%s] Call failed and took: %dms", name, elapsed().inMillis)
         }
         expendable(name, r, default)
       }
